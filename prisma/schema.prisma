@@ -14,6 +14,7 @@ model User {
   password       String
   isVerified     Boolean @default(false)
   verificationToken String?
+  verifyTokenExpiry DateTime?
   resetToken     String?
   resetTokenExpiry DateTime?
   twoFactorSecret  String? // Field to store @FA secret

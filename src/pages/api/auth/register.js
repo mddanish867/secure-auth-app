@@ -5,15 +5,6 @@ import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
-// // Configure Nodemailer
-// const transporter = nodemailer.createTransport({
-//   service: "Gmail",
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS,
-//   },
-// });
-
 // function to validate password
 const passwordValidation = (password) => {
   const minLength = 8;
@@ -64,8 +55,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Generate verification token
+    // Generate verification token and expiry
     const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verifyTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -76,16 +68,12 @@ export default async function handler(req, res) {
         email,
         password: hashedPassword,
         verificationToken,
+        verifyTokenExpiry:verifyTokenExpiry,
       },
-    });
-    res.status(200).json({
-      message:
-        "User registered successfully check your mail to verify your account",
-      user,
     });
 
     // Send verification email    
-    var transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       host: "sandbox.smtp.mailtrap.io",
       port: 2525,
       auth: {
@@ -94,46 +82,48 @@ export default async function handler(req, res) {
       }
     });
 
-      const mailOptions = {
-        from: "sender@danish.ai.com", // sender address
-        to: email, // list of receivers
-        subject: "Verify your email", // Subject line
-        // html: `<p>Click <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}">here</a> to verify your email
-        // <br> ${process.env.DOMAIN}/verifyemail?token=${verificationToken}
-        // </p>`, // html body
-        html: `
+    const mailOptions = {
+      from: "sender@danish.ai.com", // sender address
+      to: email, // list of receivers
+      subject: "Verify your email", // Subject line
+      html: `
         <div class="max-w-lg mx-auto my-10 bg-white p-8 rounded-lg shadow-md">
-        <div class="text-center mb-6">
-            <img src="path/to/your/logo.png" alt="AnjumAra Logo" class="mx-auto h-16 w-16">
+          <div class="text-center mb-6">
+              <h1 className="mx-auto h-16 w-16 text-blue-500">AnjumAra</h1>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800 text-center mb-4">Verify Your Email Address</h2>
+          <p class="text-gray-600 text-center mb-6">
+              Dear User,<br>
+              Thank you for registering with AnjumAra! To complete your registration, please verify your email address by clicking the button below.
+          </p>
+          <div class="text-center">
+              <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}" class="bg-blue-500 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-blue-600">Verify Email</a>
+          </div>
+          <p class="text-gray-600 text-center mt-6">
+              Or you can copy and paste the following URL into your browser:
+          </p>
+          <p class="text-blue-500 text-center mt-2">
+              <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}">${process.env.DOMAIN}/verifyemail?token=${verificationToken}</a>
+          </p>
+          <p class="text-gray-400 text-center mt-8 text-sm">
+              If you did not create an account, please ignore this email.
+          </p>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800 text-center mb-4">Verify Your Email Address</h2>
-        <p class="text-gray-600 text-center mb-6">
-            Dear User,<br>
-            Thank you for registering with AnjumAra! To complete your registration, please verify your email address by clicking the button below.
-        </p>
-        <div class="text-center">
-            <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}" class="bg-blue-500 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-blue-600">Verify Email</a>
-        </div>
-        <p class="text-gray-600 text-center mt-6">
-            Or you can copy and paste the following URL into your browser:
-        </p>
-        <p class="text-blue-500 text-center mt-2">
-            <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}">${process.env.DOMAIN}/verifyemail?token=${verificationToken}</a>
-        </p>
-        <p class="text-gray-400 text-center mt-8 text-sm">
-            If you did not create an account, please ignore this email.
-        </p>
-    </div>
-        `,
-      };
+      `,
+    };
 
-      await transporter.sendMail(mailOptions);
-        res.status(201).json({
-        success: true,
-        message: "User created, Please check your email to verify your account.",
+    await transporter.sendMail(mailOptions);
+
+    return res.status(201).json({
+      success: true,
+      message: "User created, Please check your email to verify your account.",
     });
 
   } catch (error) {
-    throw new Error(error.message);    
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong.",
+      error: error.message
+    });
   }
 }
