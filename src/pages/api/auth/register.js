@@ -5,14 +5,14 @@ import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
-// Configure Nodemailer
-const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// // Configure Nodemailer
+// const transporter = nodemailer.createTransport({
+//   service: "Gmail",
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASS,
+//   },
+// });
 
 // function to validate password
 const passwordValidation = (password) => {
@@ -60,7 +60,7 @@ export default async function handler(req, res) {
 
     if (existingUser) {
       return res.status(400).json({
-        message: "User already exists",
+        message: "User already exists.",
       });
     }
 
@@ -78,7 +78,13 @@ export default async function handler(req, res) {
         verificationToken,
       },
     });
-
+    res
+      .status(200)
+      .json({
+        message:
+          "User registered successfully check your mail to verify your account",
+        user,
+      });
     // Send verification email
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -86,8 +92,16 @@ export default async function handler(req, res) {
       subject: "Verify your email",
       text: `Click the link to verify your emal: ${process.env.NEXT_PUBLIC_BASE_URL}/verify?token=${verificationToken}`,
     };
+    var transport = nodemailer.createTransport({
+      host: "live.smtp.mailtrap.io",
+      port: 587,
+      auth: {
+        user: "api",
+        pass: "a589868ee4896d9ffcc2d45b10ec3962",
+      },
+    });
 
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
 
     res.status(201).json({
       message: "User created, Please check your email to verify your account.",
