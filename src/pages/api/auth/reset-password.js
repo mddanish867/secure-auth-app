@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   try {
     // Find the User with Given reset token
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { resetToken: token },
     });
 
