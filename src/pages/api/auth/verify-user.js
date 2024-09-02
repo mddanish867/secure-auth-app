@@ -2,7 +2,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export default async function handler(req, res) {  
+export default async function handler(req, res) {
+  console.log("Request Method:", req.method);
+  console.log("Request Query Parameters:", req.query);
+
   // Ensure the request method is GET
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -20,7 +23,7 @@ export default async function handler(req, res) {
 
   try {
     // Find the user with the given verification token
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { verificationToken: token },
     });
 
@@ -32,7 +35,7 @@ export default async function handler(req, res) {
 
     // Verify the token and update the user
     await prisma.user.update({
-      where: { verificationToken: token },
+      where: { id: user.id }, // Use user ID to uniquely identify the record
       data: { 
         isVerified: true,
         verificationToken: null, // Clear the token after verification
