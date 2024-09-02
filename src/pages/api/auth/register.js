@@ -78,38 +78,62 @@ export default async function handler(req, res) {
         verificationToken,
       },
     });
-    res
-      .status(200)
-      .json({
-        message:
-          "User registered successfully check your mail to verify your account",
-        user,
-      });
-    // Send verification email
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Verify your email",
-      text: `Click the link to verify your emal: ${process.env.NEXT_PUBLIC_BASE_URL}/verify?token=${verificationToken}`,
-    };
-    var transport = nodemailer.createTransport({
-      host: "live.smtp.mailtrap.io",
-      port: 587,
+    res.status(200).json({
+      message:
+        "User registered successfully check your mail to verify your account",
+      user,
+    });
+
+    // Send verification email    
+    var transporter = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
       auth: {
-        user: "api",
-        pass: "a589868ee4896d9ffcc2d45b10ec3962",
-      },
+        user: "9222b90db71b20",
+        pass: "1000d67bf0adc4"
+      }
     });
 
-    await transport.sendMail(mailOptions);
+      const mailOptions = {
+        from: "sender@danish.ai.com", // sender address
+        to: email, // list of receivers
+        subject: "Verify your email", // Subject line
+        // html: `<p>Click <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}">here</a> to verify your email
+        // <br> ${process.env.DOMAIN}/verifyemail?token=${verificationToken}
+        // </p>`, // html body
+        html: `
+        <div class="max-w-lg mx-auto my-10 bg-white p-8 rounded-lg shadow-md">
+        <div class="text-center mb-6">
+            <img src="path/to/your/logo.png" alt="AnjumAra Logo" class="mx-auto h-16 w-16">
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 text-center mb-4">Verify Your Email Address</h2>
+        <p class="text-gray-600 text-center mb-6">
+            Dear User,<br>
+            Thank you for registering with AnjumAra! To complete your registration, please verify your email address by clicking the button below.
+        </p>
+        <div class="text-center">
+            <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}" class="bg-blue-500 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-blue-600">Verify Email</a>
+        </div>
+        <p class="text-gray-600 text-center mt-6">
+            Or you can copy and paste the following URL into your browser:
+        </p>
+        <p class="text-blue-500 text-center mt-2">
+            <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}">${process.env.DOMAIN}/verifyemail?token=${verificationToken}</a>
+        </p>
+        <p class="text-gray-400 text-center mt-8 text-sm">
+            If you did not create an account, please ignore this email.
+        </p>
+    </div>
+        `,
+      };
 
-    res.status(201).json({
-      message: "User created, Please check your email to verify your account.",
+      await transporter.sendMail(mailOptions);
+        res.status(201).json({
+        success: true,
+        message: "User created, Please check your email to verify your account.",
     });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: "Internal server error",
-    });
+    throw new Error(error.message);    
   }
 }
