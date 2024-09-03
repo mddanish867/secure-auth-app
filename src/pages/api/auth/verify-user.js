@@ -2,9 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export default async function handler(req, res) {
-  console.log("Request Method:", req.method);
-  console.log("Request Query Parameters:", req.query);
+export default async function handler(req, res) {  
 
   // Ensure the request method is GET
   if (req.method !== 'POST') {

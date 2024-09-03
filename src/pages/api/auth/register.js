@@ -29,10 +29,10 @@ export default async function handler(req, res) {
     });
   }
 
-  const { email, password } = req.body;
+  const {name, email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "Name, Email and password are required" });
   }
 
   // validate password against policy
@@ -65,6 +65,7 @@ export default async function handler(req, res) {
     // Create user in Prisma
     const user = await prisma.user.create({
       data: {
+        name,
         email,
         password: hashedPassword,
         verificationToken,

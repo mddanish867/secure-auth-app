@@ -36,6 +36,7 @@ export default async function handler(req, res) {
       where: { id: decoded.userId },
       select: {
         id: true,
+        name: true,
         email: true,
         createdAt: true,
         updatedAt: true,
