@@ -23,6 +23,17 @@ const passwordValidation = (password) => {
 };
 
 export default async function handler(req, res) {
+
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Adjust this to allow specific origins
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({
       message: "Method not allowed",
@@ -75,12 +86,12 @@ export default async function handler(req, res) {
 
     // Send verification email    
     const transporter = nodemailer.createTransport({
-      host: "sandbox.smtp.mailtrap.io",
-      port: 2525,
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
       auth: {
-        user: "9222b90db71b20",
-        pass: "1000d67bf0adc4"
-      }
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
     });
 
     const mailOptions = {
@@ -121,10 +132,11 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+    console.error("Error during registration:", error);
     return res.status(500).json({
       success: false,
       message: "Something went wrong.",
-      error: error.message
+      error: error.message,
     });
   }
 }
