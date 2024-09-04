@@ -61,12 +61,19 @@ export default async function handler(req, res) {
   );
 
   // Set the token in cookies
+  // res.setHeader('Set-Cookie', cookie.serialize('token', token, {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV !== 'development', // Use secure cookies in production
+  //   //maxAge: 3600, // 1 hour
+  //   sameSite: 'strict',
+  //   path: '/'
+  // }));
+
   res.setHeader('Set-Cookie', cookie.serialize('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV !== 'development', // Use secure cookies in production
-    //maxAge: 3600, // 1 hour
-    sameSite: 'strict',
-    path: '/'
+    secure: process.env.NODE_ENV === 'production', // true in production, false in development
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict', // Adjust according to your needs
+    path: '/',
   }));
 
   // Return the response
