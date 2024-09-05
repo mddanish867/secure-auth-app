@@ -5,9 +5,19 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://anjumara-saas-application.vercel.app',
+];
 export default async function handler(req, res) {
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', ''); // Or handle unauthorized origins
+  }
   // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Adjust this to allow specific origins
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
