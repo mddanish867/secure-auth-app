@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
-import cookie from 'cookie';
 
 const prisma = new PrismaClient();
 
