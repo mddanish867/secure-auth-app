@@ -10,9 +10,11 @@ datasource db {
 
 model User {
   id             String   @id @default(uuid())
+  googleId        String?   @unique
   name           String?
   email          String   @unique
   password       String
+  profileImage    String?
   isVerified     Boolean @default(false)
   verificationToken String?
   verifyTokenExpiry DateTime?
@@ -22,5 +24,14 @@ model User {
   towFactorEnabled Boolean @default(false) // Field to indicate if 2FA is enabled
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  aiResponses      AIResponse[] // Relation to AIResponse model
 }
 
+model AIResponse {
+  id         String   @id @default(uuid())
+  userId     String   // Foreign key to User
+  user       User     @relation(fields: [userId], references: [id])
+  query      String   // User's search query
+  response   String   // AI's generated response
+  createdAt  DateTime @default(now())
+}

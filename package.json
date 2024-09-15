@@ -12,8 +12,11 @@
   "dependencies": {
     "@prisma/adapter-pg": "^5.18.0",
     "@prisma/client": "^5.19.1",
+    "@supabase/supabase-js": "^2.45.4",
     "bcryptjs": "^2.4.3",
     "crypto": "^1.0.1",
+    "dotenv": "^16.4.5",
+    "google-auth-library": "^9.14.1",
     "jsonwebtoken": "^9.0.2",
     "next": "14.2.5",
     "next-auth": "^4.24.7",
@@ -26,6 +29,8 @@
     "speakeasy": "^2.0.0"
   },
   "devDependencies": {
+    "@types/node": "22.5.4",
+    "@types/react": "18.3.5",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
