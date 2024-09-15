@@ -39,27 +39,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verify the JWT token
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "Authentication required." });
-    }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Extract userId from the decoded token
-    const { userId } = decoded;
-
-    // Check if the user exists in the database
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    // Save the AI response in the database
+   // Save the AI response in the database
     const aiResponse = await prisma.aIResponse.create({
       data: {
         userId, // Associate with user
