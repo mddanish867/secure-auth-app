@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   try {
 
    // Save the AI response in the database
-    const aiResponse = await prisma.aIResponse.create({
+    const aiResponse = await prisma.webResponse.create({
       data: {
         userId, // Associate with user
         query,
