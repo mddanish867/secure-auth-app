@@ -25,12 +25,23 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   aiResponses      AIResponse[] // Relation to AIResponse model
+  webResponses     WebResponse[] // Relation to WebResponse model
 }
 
 model AIResponse {
   id         String   @id @default(uuid())
   userId     String   // Foreign key to User
   user       User     @relation(fields: [userId], references: [id])
+  query      String   // User's search query
+  response   String   // AI's generated response
+  createdAt  DateTime @default(now())
+}
+
+model WebResponse {
+  id         String   @id @default(uuid())
+  userId     String   // Foreign key to User
+  user       User     @relation(fields: [userId], references: [id])
+  chatHeader String
   query      String   // User's search query
   response   String   // AI's generated response
   createdAt  DateTime @default(now())
