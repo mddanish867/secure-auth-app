@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const {userId, query, response } = req.body;
+  const {userId, query, response, chatHeader } = req.body;
 
   if (!query || !response) {
     return res.status(400).json({ message: "Query and response are required." });
@@ -42,9 +42,10 @@ export default async function handler(req, res) {
    // Save the AI response in the database
     const aiResponse = await prisma.webResponse.create({
       data: {
-        userId, // Associate with user
+        userId, 
         query,
         response,
+        chatHeader,
       },
     });
 
