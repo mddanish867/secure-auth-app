@@ -4,7 +4,7 @@ import multer from 'multer';
 
 // Initialize Prisma and Supabase clients
 const prisma = new PrismaClient();
-const supabase = createClient(process.env.DATABASE_URL, process.env.supabase.DIRECT_URL);
+const supabase = createClient(process.env.DATABASE_URL, process.env.DIRECT_URL);
 
 // Initialize Multer to handle multipart/form-data (store files in memory)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -82,7 +82,7 @@ const handler = async (req, res) => {
       uploadedImages.push(imageUrl);
 
       // Save image URL and name to Prisma
-      await prisma.image.create({
+      await prisma.component.create({
         data: {
           name,
           imageUrl,
