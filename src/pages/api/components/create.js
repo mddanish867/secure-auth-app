@@ -17,9 +17,9 @@ export const config = {
 };
 
 const allowedOrigins = [
-    'http://localhost:3000',
-    'https://anjumara-saas-application.vercel.app',
-  ];
+  'http://localhost:3000',
+  'https://anjumara-saas-application.vercel.app',
+];
 
 // Helper function to parse incoming requests with Multer
 const runMulter = (req, res) => {
@@ -32,26 +32,30 @@ const runMulter = (req, res) => {
 };
 
 const handler = async (req, res) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', ''); // Or handle unauthorized origins
-    }
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    // Handle preflight OPTIONS request
-    if (req.method === 'OPTIONS') {
-      return res.status(200).end();
-    } 
+  const origin = req.headers.origin;
+
+  // Set CORS headers
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', ''); // Or handle unauthorized origins
+  }
   
-    if (req.method !== "POST") {
-      return res.status(405).json({
-        message: "Method not allowed",
-      });
-    }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      message: 'Method not allowed',
+    });
+  }
+
   try {
     // Parse request with Multer
     await runMulter(req, res);
