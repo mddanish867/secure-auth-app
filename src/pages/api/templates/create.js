@@ -48,7 +48,16 @@ export default async function handler(req, res) {
         const document = files.document;
         const code = files.code;
 
-        if (!name || !description || !techStack || !apiList || !screenshots || !document || !code || !userId) {
+        if (
+          !name ||
+          !description ||
+          !techStack ||
+          !apiList ||
+          !screenshots ||
+          !document ||
+          !code ||
+          !userId
+        ) {
           return res.status(400).json({ message: "All fields are required" });
         }
 
