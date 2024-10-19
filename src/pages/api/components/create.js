@@ -1,40 +1,51 @@
-// pages/api/upload.js
-import { PrismaClient } from "@prisma/client";
-import supabase from '../../lib/supabaseClient';
+import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
-import nextConnect from 'next-connect';
 
+// Initialize Prisma and Supabase clients
 const prisma = new PrismaClient();
-// Initialize Multer to handle multipart/form-data
-const upload = multer({
-  storage: multer.memoryStorage(), // Store files in memory for handling
-});
+const supabase = createClient(process.env.DATABASE_URL, process.env.DIRECT_URL);
 
-const apiRoute = nextConnect({
-  onError(error, req, res) {
-    res.status(500).json({ error: `Something went wrong! ${error.message}` });
+// Initialize Multer to handle multipart/form-data (store files in memory)
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Disable Next.js built-in body parser to handle multipart form data
+export const config = {
+  api: {
+    bodyParser: false,
   },
-  onNoMatch(req, res) {
-    res.status(405).json({ error: `Method '${req.method}' Not Allowed` });
-  },
-});
+};
 
-// Use multer to parse the multipart form data
-apiRoute.use(upload.array('images', 10)); // Upload up to 5 images
+// Helper function to parse incoming requests with Multer
+const runMulter = (req, res) => {
+  return new Promise((resolve, reject) => {
+    upload.array('images', 10)(req, res, (err) => {
+      if (err) return reject(err);
+      resolve(req);
+    });
+  });
+};
 
-apiRoute.post(async (req, res) => {
-  const { name } = req.body;
-  const files = req.files;
-
-  if (!name || files.length === 0) {
-    return res.status(400).json({ message: 'Name and images are required' });
+const handler = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: `Method '${req.method}' not allowed` });
   }
 
   try {
+    // Parse request with Multer
+    await runMulter(req, res);
+
+    const { name } = req.body;
+    const files = req.files;
+
+    if (!name || !files || files.length === 0) {
+      return res.status(400).json({ message: 'Name and images are required' });
+    }
+
     const uploadedImages = [];
 
     for (const file of files) {
-      // Upload image to Supabase Storage
+      // Upload each file to Supabase Storage
       const { data, error } = await supabase.storage
         .from('uploads')
         .upload(`images/${Date.now()}_${file.originalname}`, file.buffer, {
@@ -58,20 +69,15 @@ apiRoute.post(async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    // Respond with success
+    return res.status(200).json({
       message: 'Images uploaded successfully',
       images: uploadedImages,
     });
   } catch (error) {
     console.error('Error uploading images:', error);
-    res.status(500).json({ message: 'Error uploading images', error: error.message });
+    return res.status(500).json({ message: 'Error uploading images', error: error.message });
   }
-});
-
-export const config = {
-  api: {
-    bodyParser: false, // Disable Next.js body parsing for this route because multer handles it
-  },
 };
 
-export default apiRoute;
+export default handler;
