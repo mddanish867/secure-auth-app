@@ -4,7 +4,7 @@ import multer from 'multer';
 
 // Initialize Prisma and Supabase clients
 const prisma = new PrismaClient();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Initialize Multer to handle multipart/form-data (store files in memory)
 const upload = multer({ storage: multer.memoryStorage() });
