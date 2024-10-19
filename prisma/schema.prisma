@@ -26,6 +26,7 @@ model User {
   updatedAt      DateTime @updatedAt
   aiResponses      AIResponse[] // Relation to AIResponse model
   webResponses     WebResponse[] // Relation to WebResponse model
+  template         Template[] // Relation to Templates model
 }
 
 model AIResponse {
@@ -45,4 +46,19 @@ model WebResponse {
   query      String   // User's search query
   response   String   // AI's generated response
   createdAt  DateTime @default(now())
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  userId     String   // Foreign key to User
+  user       User     @relation(fields: [userId], references: [id])
+  name        String
+  description String
+  techStack   String[]
+  screenshots String[]
+  documentUrl String
+  codeUrl     String
+  apiList     String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
