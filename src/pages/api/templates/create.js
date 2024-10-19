@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import formidable from "formidable";
 import fs from "fs";
+import supabase from "@/lib/supabaseClient"; // Make sure this is the correct path to your supabaseClient.js
 
 const prisma = new PrismaClient();
 
@@ -11,79 +12,56 @@ export const config = {
 };
 
 const allowedOrigins = [
-  'http://localhost:3000',
-  'https://anjumara-saas-application.vercel.app',
-  'https://secure-auth-app-gamma.vercel.app'
+  "http://localhost:3000",
+  "https://anjumara-saas-application.vercel.app",
+  "https://secure-auth-app-gamma.vercel.app",
 ];
 
 export default async function handler(req, res) {
-  // Handle CORS
   const origin = req.headers.origin;
-  
-  // Check if the origin is in our allowed origins
+
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   }
 
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.status(200).end();
     return;
   }
 
-  // Handle POST requests
-  if (req.method === 'POST') {
+  if (req.method === "POST") {
     const form = formidable({ multiples: true });
-    
+
     form.parse(req, async (err, fields, files) => {
       if (err) {
         return res.status(500).json({ message: "Error parsing form data" });
       }
-      
+
       try {
-        const { name, description, techStack, apiList, userId } = fields; // Added userId here
+        const { name, description, techStack, apiList, userId } = fields;
         const screenshots = files.screenshots;
         const document = files.document;
         const code = files.code;
-    
-        if (!name) {
-          return res.status(400).json({ message: "Name is required" });
+
+        if (!name || !description || !techStack || !apiList || !screenshots || !document || !code || !userId) {
+          return res.status(400).json({ message: "All fields are required" });
         }
-        if (!description) {
-          return res.status(400).json({ message: "Description is required" });
-        }
-        if (!techStack) {
-          return res.status(400).json({ message: "Tech stack is required" });
-        }
-        if (!apiList) {
-          return res.status(400).json({ message: "API list is required" });
-        }
-        if (!screenshots) {
-          return res.status(400).json({ message: "Screenshots are required" });
-        }
-        if (!document) {
-          return res.status(400).json({ message: "Document is required" });
-        }
-        if (!code) {
-          return res.status(400).json({ message: "Code file is required" });
-        }
-        if (!userId) {
-          return res.status(400).json({ message: "User ID is required" });
-        }
-        
-        // Validate the file types (if necessary, based on expected file types)
+
         const validateFile = (file, allowedExtensions) => {
           const fileExt = file.name.split(".").pop().toLowerCase();
           return allowedExtensions.includes(fileExt);
         };
-    
+
         const validScreenshotTypes = ["png", "jpg", "jpeg"];
-        const validDocumentTypes = ["pdf"];
+        const validDocumentTypes = ["pdf", "docs", "xcls"];
         const validCodeTypes = ["zip", "rar"];
-    
+
         if (!validateFile(screenshots, validScreenshotTypes)) {
           return res
             .status(400)
@@ -99,7 +77,7 @@ export default async function handler(req, res) {
             .status(400)
             .json({ success: false, message: "Invalid code file type" });
         }
-    
+
         // Upload screenshots
         const screenshotUrls = await Promise.all(
           (Array.isArray(screenshots) ? screenshots : [screenshots]).map(
@@ -115,7 +93,7 @@ export default async function handler(req, res) {
             }
           )
         );
-    
+
         // Upload document
         const { data: documentData, error: documentError } =
           await supabase.storage
@@ -126,18 +104,18 @@ export default async function handler(req, res) {
             );
         if (documentError)
           throw new Error(`Document upload failed: ${documentError.message}`);
-    
+
         // Upload code
         const { data: codeData, error: codeError } = await supabase.storage
           .from("code")
           .upload(`${Date.now()}-${code.name}`, fs.createReadStream(code.path));
         if (codeError)
           throw new Error(`Code upload failed: ${codeError.message}`);
-    
+
         // Create template in database
         const template = await prisma.template.create({
           data: {
-            userId, // Add userId to the data being stored
+            userId,
             name,
             description,
             techStack: techStack.split(","),
@@ -147,7 +125,7 @@ export default async function handler(req, res) {
             apiList: apiList.split(","),
           },
         });
-    
+
         return res.status(201).json({
           success: true,
           message: "Template created successfully.",
@@ -163,7 +141,7 @@ export default async function handler(req, res) {
       }
     });
   } else {
-    res.setHeader('Allow', ['POST']);
+    res.setHeader("Allow", ["POST"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
