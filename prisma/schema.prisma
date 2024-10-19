@@ -27,6 +27,7 @@ model User {
   aiResponses      AIResponse[] // Relation to AIResponse model
   webResponses     WebResponse[] // Relation to WebResponse model
   template         Template[] // Relation to Templates model
+  component        Component[] // Relation to Component model
 }
 
 model AIResponse {
@@ -60,5 +61,15 @@ model Template {
   codeUrl     String
   apiList     String[]
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Component {
+  id          String   @id @default(uuid())
+  userId     String?   // Foreign key to User
+  user       User?     @relation(fields: [userId], references: [id])
+  name      String
+  imageUrl  String
+  createdAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
