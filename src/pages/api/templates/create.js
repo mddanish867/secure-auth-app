@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import formidable from "formidable";
 import fs from "fs";
-import supabase from "@/lib/supabaseClient"; // Make sure this is the correct path to your supabaseClient.js
+import supabase from "../../../lib/supabaseClient";
 
 const prisma = new PrismaClient();
-
 export const config = {
   api: {
     bodyParser: false,
