@@ -60,11 +60,11 @@ const handler = async (req, res) => {
     // Parse request with Multer
     await runMulter(req, res);
 
-    const { name } = req.body;
+    const { name, userId } = req.body;
     const files = req.files;
 
-    if (!name || !files || files.length === 0) {
-      return res.status(400).json({ message: 'Name and images are required' });
+    if (!name || !userId || !files || files.length === 0) {
+      return res.status(400).json({ message: 'Name,userId and images are required' });
     }
 
     const uploadedImages = [];
@@ -90,6 +90,7 @@ const handler = async (req, res) => {
         data: {
           name,
           imageUrl,
+          userId,
         },
       });
     }
