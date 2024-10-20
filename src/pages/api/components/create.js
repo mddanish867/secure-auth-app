@@ -1,10 +1,16 @@
 import { PrismaClient } from '@prisma/client';
-import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
+import cloudinary from 'cloudinary';
 
 // Initialize Prisma and Supabase clients
 const prisma = new PrismaClient();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Initialize Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Initialize Multer to handle multipart/form-data (store files in memory)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -40,7 +46,7 @@ const handler = async (req, res) => {
   } else {
     res.setHeader('Access-Control-Allow-Origin', ''); // Or handle unauthorized origins
   }
-  
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -64,28 +70,27 @@ const handler = async (req, res) => {
     const files = req.files;
 
     if (!name || !userId || !files || files.length === 0) {
-      return res.status(400).json({ message: 'Name,userId and images are required' });
+      return res.status(400).json({ message: 'Name, userId, and images are required' });
     }
 
     const uploadedImages = [];
 
     for (const file of files) {
-      // Upload each file to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('uploads')
-        .upload(`images/${Date.now()}_${file.originalname}`, file.buffer, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+      // Upload each file to Cloudinary
+      const result = await cloudinary.v2.uploader.upload_stream(
+        { folder: 'uploads', resource_type: 'image' },
+        (error, result) => {
+          if (error) {
+            throw new Error(`Error uploading image: ${error.message}`);
+          }
+          return result;
+        }
+      ).end(file.buffer);
 
-      if (error) {
-        throw new Error(`Error uploading image: ${error.message}`);
-      }
-
-      const imageUrl = `${supabase.storageUrl}/object/public/uploads/${data.path}`;
+      const imageUrl = result.secure_url;
       uploadedImages.push(imageUrl);
 
-      // Save image URL and name to Prisma
+      // Save image URL and name to Prisma (Supabase table)
       await prisma.component.create({
         data: {
           name,
