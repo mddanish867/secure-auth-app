@@ -96,7 +96,7 @@ const handler = async (req, res) => {
       implementationSteps,
       apiRequired,
       documentation,
-      //categories,
+      // categories,
       userId,
     } = req.body;
 
@@ -138,12 +138,6 @@ const handler = async (req, res) => {
         message: "Documentation is required",
       });
     }
-   
-    // if (!categories) {
-    //   return res.status(400).json({
-    //     message: "Categories are required",
-    //   });
-    // }
 
     if (!userId) {
       return res.status(400).json({
@@ -169,9 +163,33 @@ const handler = async (req, res) => {
     // Create a comma-separated string of image URLs
     const imageUrlsString = uploadedImages.join(",");
 
-    // Convert implementationSteps and apiRequired to comma-separated strings
-    const implementationStepsString = implementationSteps.join(","); // Assuming implementationSteps is an array
-    const apiRequiredString = apiRequired.join(","); // Assuming apiRequired is an array
+    // **Check if implementationSteps and apiRequired are strings and parse them if necessary**
+    let implementationStepsArray = implementationSteps;
+    let apiRequiredArray = apiRequired;
+
+    if (typeof implementationSteps === "string") {
+      try {
+        implementationStepsArray = JSON.parse(implementationSteps); // Convert to array if string
+      } catch (error) {
+        console.error("Error parsing implementationSteps:", error);
+      }
+    }
+
+    if (typeof apiRequired === "string") {
+      try {
+        apiRequiredArray = JSON.parse(apiRequired); // Convert to array if string
+      } catch (error) {
+        console.error("Error parsing apiRequired:", error);
+      }
+    }
+
+    // Convert arrays to comma-separated strings
+    const implementationStepsString = Array.isArray(implementationStepsArray)
+      ? implementationStepsArray.join(",")
+      : "";
+    const apiRequiredString = Array.isArray(apiRequiredArray)
+      ? apiRequiredArray.join(",")
+      : "";
 
     // Save all fields to Prisma (Supabase table)
     await prisma.component.create({
@@ -183,7 +201,7 @@ const handler = async (req, res) => {
         apiRequired: apiRequiredString, // Save as a comma-separated string
         documentation,
         imageUrl: imageUrlsString, // Save the comma-separated image URLs
-        //categories, // Directly save the categories array
+        // categories, // Directly save the categories array
         userId,
       },
     });
@@ -195,10 +213,11 @@ const handler = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating component:", error);
-    return res
-      .status(500)
-      .json({ message: "Error creating component", error: error.message });
+    return res.status(500).json({ message: "Error creating component", error: error.message });
   }
 };
 
 export default handler;
+
+
+
