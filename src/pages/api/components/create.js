@@ -27,17 +27,8 @@ const allowedOrigins = [
   'https://anjumara-saas-application.vercel.app',
 ];
 
-// Helper function to parse incoming requests with Multer
-const runMulter = (req, res) => {
-  return new Promise((resolve, reject) => {
-    upload.array('images', 10)(req, res, (err) => {
-      if (err) return reject(err);
-      resolve(req);
-    });
-  });
-};
-
-const handler = async (req, res) => {
+// Helper function to handle CORS and preflight OPTIONS request
+const handleCors = (req, res) => {
   const origin = req.headers.origin;
 
   // Set CORS headers
@@ -53,8 +44,41 @@ const handler = async (req, res) => {
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return true; // To exit the function
   }
+  return false;
+};
+
+// Helper function to parse incoming requests with Multer
+const runMulter = (req, res) => {
+  return new Promise((resolve, reject) => {
+    upload.array('images', 10)(req, res, (err) => {
+      if (err) return reject(err);
+      resolve(req);
+    });
+  });
+};
+
+// Helper function to upload image to Cloudinary
+const uploadToCloudinary = (file) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.v2.uploader.upload_stream(
+      { folder: 'uploads', resource_type: 'image' },
+      (error, result) => {
+        if (error) {
+          return reject(`Error uploading image: ${error.message}`);
+        }
+        resolve(result);
+      }
+    );
+    uploadStream.end(file.buffer);
+  });
+};
+
+const handler = async (req, res) => {
+  // Handle CORS and exit if OPTIONS request
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({
@@ -77,16 +101,7 @@ const handler = async (req, res) => {
 
     for (const file of files) {
       // Upload each file to Cloudinary
-      const result = await cloudinary.v2.uploader.upload_stream(
-        { folder: 'uploads', resource_type: 'image' },
-        (error, result) => {
-          if (error) {
-            throw new Error(`Error uploading image: ${error.message}`);
-          }
-          return result;
-        }
-      ).end(file.buffer);
-
+      const result = await uploadToCloudinary(file); // Await the Cloudinary upload for each image
       const imageUrl = result.secure_url;
       uploadedImages.push(imageUrl);
 
