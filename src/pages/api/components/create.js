@@ -2,10 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import cloudinary from 'cloudinary';
 
-// Initialize Prisma and Supabase clients
+// Initialize Prisma and Cloudinary clients
 const prisma = new PrismaClient();
 
-// Initialize Cloudinary
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -35,7 +34,7 @@ const handleCors = (req, res) => {
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
-    res.setHeader('Access-Control-Allow-Origin', ''); // Or handle unauthorized origins
+    res.setHeader('Access-Control-Allow-Origin', ''); // Handle unauthorized origins
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -90,11 +89,35 @@ const handler = async (req, res) => {
     // Parse request with Multer
     await runMulter(req, res);
 
-    const { name, userId } = req.body;
+    const {
+      name,
+      description,
+      code,
+      implementationSteps,
+      apiRequired,
+      documentation,
+      categories,
+      userId,
+    } = req.body;
+
     const files = req.files;
 
-    if (!name || !userId || !files || files.length === 0) {
-      return res.status(400).json({ message: 'Name, userId, and images are required' });
+    // Validate required fields
+    if (
+      !name ||
+      !description ||
+      !code ||
+      !implementationSteps ||
+      !apiRequired ||
+      !documentation ||
+      !categories ||
+      !userId ||
+      !files ||
+      files.length === 0
+    ) {
+      return res.status(400).json({
+        message: 'Name, description, code, implementationSteps, apiRequired, documentation, categories, userId, and images are required',
+      });
     }
 
     const uploadedImages = [];
@@ -109,23 +132,33 @@ const handler = async (req, res) => {
     // Create a comma-separated string of image URLs
     const imageUrlsString = uploadedImages.join(',');
 
-    // Save name, userId, and comma-separated image URLs to Prisma (Supabase table)
+    // Convert implementationSteps and apiRequired to comma-separated strings
+    const implementationStepsString = implementationSteps.join(','); // Assuming implementationSteps is an array
+    const apiRequiredString = apiRequired.join(','); // Assuming apiRequired is an array
+
+    // Save all fields to Prisma (Supabase table)
     await prisma.component.create({
       data: {
         name,
-        imageUrl: imageUrlsString, // Save the comma-separated string here
+        description,
+        code,
+        implementationSteps: implementationStepsString, // Save as a comma-separated string
+        apiRequired: apiRequiredString, // Save as a comma-separated string
+        documentation,
+        imageUrl: imageUrlsString, // Save the comma-separated image URLs
+        categories, // Directly save the categories array
         userId,
       },
     });
 
     // Respond with success
     return res.status(200).json({
-      message: 'Images uploaded successfully',
+      message: 'Component created successfully',
       images: uploadedImages,
     });
   } catch (error) {
-    console.error('Error uploading images:', error);
-    return res.status(500).json({ message: 'Error uploading images', error: error.message });
+    console.error('Error creating component:', error);
+    return res.status(500).json({ message: 'Error creating component', error: error.message });
   }
 };
 
