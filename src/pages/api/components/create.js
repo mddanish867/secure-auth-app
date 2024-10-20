@@ -96,7 +96,7 @@ const handler = async (req, res) => {
       implementationSteps,
       apiRequired,
       documentation,
-      categories,
+      //categories,
       userId,
     } = req.body;
 
@@ -139,11 +139,11 @@ const handler = async (req, res) => {
       });
     }
    
-    if (!categories) {
-      return res.status(400).json({
-        message: "Categories are required",
-      });
-    }
+    // if (!categories) {
+    //   return res.status(400).json({
+    //     message: "Categories are required",
+    //   });
+    // }
 
     if (!userId) {
       return res.status(400).json({
@@ -183,7 +183,7 @@ const handler = async (req, res) => {
         apiRequired: apiRequiredString, // Save as a comma-separated string
         documentation,
         imageUrl: imageUrlsString, // Save the comma-separated image URLs
-        categories, // Directly save the categories array
+        //categories, // Directly save the categories array
         userId,
       },
     });
