@@ -1,10 +1,16 @@
 import { PrismaClient } from "@prisma/client";
-import { createClient } from '@supabase/supabase-js';
+import cloudinary from 'cloudinary';
 import formidable from 'formidable';
 import fs from 'fs';
 
+// Initialize Prisma and Cloudinary clients
 const prisma = new PrismaClient();
-const supabase = createClient(process.env.DATABASE_URL, process.env.supabase.DIRECT_URL);
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 export const config = {
   api: {
     bodyParser: false,
@@ -29,8 +35,10 @@ export default async function handler(req, res) {
   }
 
   const form = new formidable.IncomingForm({ multiples: true });
+
   form.parse(req, async (err, fields, files) => {
     if (err) {
+      console.error('Error parsing form data:', err);
       return res.status(500).json({ message: 'Error parsing form data' });
     }
 
@@ -44,47 +52,42 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "All fields are required" });
       }
 
+      // Helper function to upload file to Cloudinary
+      const uploadToCloudinary = async (file) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.v2.uploader.upload_stream(
+            { folder: 'uploads', resource_type: 'auto' }, // resource_type: 'auto' allows any file type
+            (error, result) => {
+              if (error) {
+                return reject(`Error uploading to Cloudinary: ${error.message}`);
+              }
+              resolve(result.secure_url);
+            }
+          );
+          fs.createReadStream(file.filepath).pipe(uploadStream);
+        });
+      };
+
       // Upload screenshots
       const screenshotUrls = await Promise.all(
-        (Array.isArray(screenshots) ? screenshots : [screenshots]).map(async (screenshot) => {
-          const fileContent = await fs.promises.readFile(screenshot.filepath);
-          const { data, error } = await supabase.storage
-            .from('screenshots')
-            .upload(`${Date.now()}-${screenshot.originalFilename}`, fileContent, {
-              contentType: screenshot.mimetype,
-            });
-          if (error) throw error;
-          return data?.path || '';
-        })
+        (Array.isArray(screenshots) ? screenshots : [screenshots]).map(screenshot => uploadToCloudinary(screenshot))
       );
 
       // Upload document
-      const documentContent = await fs.promises.readFile(document.filepath);
-      const { data: documentData, error: documentError } = await supabase.storage
-        .from('documents')
-        .upload(`${Date.now()}-${document.originalFilename}`, documentContent, {
-          contentType: document.mimetype,
-        });
-      if (documentError) throw documentError;
+      const documentUrl = await uploadToCloudinary(document);
 
       // Upload code
-      const codeContent = await fs.promises.readFile(code.filepath);
-      const { data: codeData, error: codeError } = await supabase.storage
-        .from('code')
-        .upload(`${Date.now()}-${code.originalFilename}`, codeContent, {
-          contentType: code.mimetype,
-        });
-      if (codeError) throw codeError;
+      const codeUrl = await uploadToCloudinary(code);
 
-      // Create template in database
+      // Create template in the database
       const template = await prisma.template.create({
         data: {
           name,
           description,
           techStack: techStack.split(',').map(tech => tech.trim()),
           screenshots: screenshotUrls,
-          documentUrl: documentData?.path || '',
-          codeUrl: codeData?.path || '',
+          documentUrl,
+          codeUrl,
           apiList: apiList.split(',').map(api => api.trim()),
         },
       });
