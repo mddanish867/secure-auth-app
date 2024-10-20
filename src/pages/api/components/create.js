@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import multer from 'multer';
-import cloudinary from 'cloudinary';
+import { PrismaClient } from "@prisma/client";
+import multer from "multer";
+import cloudinary from "cloudinary";
 
 // Initialize Prisma and Cloudinary clients
 const prisma = new PrismaClient();
@@ -22,8 +22,8 @@ export const config = {
 };
 
 const allowedOrigins = [
-  'http://localhost:3000',
-  'https://anjumara-saas-application.vercel.app',
+  "http://localhost:3000",
+  "https://anjumara-saas-application.vercel.app",
 ];
 
 // Helper function to handle CORS and preflight OPTIONS request
@@ -32,17 +32,17 @@ const handleCors = (req, res) => {
 
   // Set CORS headers
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader("Access-Control-Allow-Origin", origin);
   } else {
-    res.setHeader('Access-Control-Allow-Origin', ''); // Handle unauthorized origins
+    res.setHeader("Access-Control-Allow-Origin", ""); // Handle unauthorized origins
   }
 
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
 
   // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.status(200).end();
     return true; // To exit the function
   }
@@ -52,7 +52,7 @@ const handleCors = (req, res) => {
 // Helper function to parse incoming requests with Multer
 const runMulter = (req, res) => {
   return new Promise((resolve, reject) => {
-    upload.array('images', 10)(req, res, (err) => {
+    upload.array("images", 10)(req, res, (err) => {
       if (err) return reject(err);
       resolve(req);
     });
@@ -63,7 +63,7 @@ const runMulter = (req, res) => {
 const uploadToCloudinary = (file) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.v2.uploader.upload_stream(
-      { folder: 'uploads', resource_type: 'image' },
+      { folder: "uploads", resource_type: "image" },
       (error, result) => {
         if (error) {
           return reject(`Error uploading image: ${error.message}`);
@@ -79,9 +79,9 @@ const handler = async (req, res) => {
   // Handle CORS and exit if OPTIONS request
   if (handleCors(req, res)) return;
 
-  if (req.method !== 'POST') {
+  if (req.method !== "POST") {
     return res.status(405).json({
-      message: 'Method not allowed',
+      message: "Method not allowed",
     });
   }
 
@@ -103,20 +103,57 @@ const handler = async (req, res) => {
     const files = req.files;
 
     // Validate required fields
-    if (
-      !name ||
-      !description ||
-      !code ||
-      !implementationSteps ||
-      !apiRequired ||
-      !documentation ||
-      !categories ||
-      !userId ||
-      !files ||
-      files.length === 0
-    ) {
+    if (!name) {
       return res.status(400).json({
-        message: 'Name, description, code, implementationSteps, apiRequired, documentation, categories, userId, and images are required',
+        message: "Name is required",
+      });
+    }
+
+    if (!description) {
+      return res.status(400).json({
+        message: "Description is required",
+      });
+    }
+
+    if (!code) {
+      return res.status(400).json({
+        message: "Code is required",
+      });
+    }
+
+    if (!implementationSteps || implementationSteps.length === 0) {
+      return res.status(400).json({
+        message: "Implementation steps are required",
+      });
+    }
+
+    if (!apiRequired || apiRequired.length === 0) {
+      return res.status(400).json({
+        message: "API required information is required",
+      });
+    }
+
+    if (!documentation) {
+      return res.status(400).json({
+        message: "Documentation is required",
+      });
+    }
+
+    if (!categories || categories.length === 0) {
+      return res.status(400).json({
+        message: "Categories are required",
+      });
+    }
+
+    if (!userId) {
+      return res.status(400).json({
+        message: "User ID is required",
+      });
+    }
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        message: "At least one image is required",
       });
     }
 
@@ -130,11 +167,11 @@ const handler = async (req, res) => {
     }
 
     // Create a comma-separated string of image URLs
-    const imageUrlsString = uploadedImages.join(',');
+    const imageUrlsString = uploadedImages.join(",");
 
     // Convert implementationSteps and apiRequired to comma-separated strings
-    const implementationStepsString = implementationSteps.join(','); // Assuming implementationSteps is an array
-    const apiRequiredString = apiRequired.join(','); // Assuming apiRequired is an array
+    const implementationStepsString = implementationSteps.join(","); // Assuming implementationSteps is an array
+    const apiRequiredString = apiRequired.join(","); // Assuming apiRequired is an array
 
     // Save all fields to Prisma (Supabase table)
     await prisma.component.create({
@@ -153,12 +190,14 @@ const handler = async (req, res) => {
 
     // Respond with success
     return res.status(200).json({
-      message: 'Component created successfully',
+      message: "Component created successfully",
       images: uploadedImages,
     });
   } catch (error) {
-    console.error('Error creating component:', error);
-    return res.status(500).json({ message: 'Error creating component', error: error.message });
+    console.error("Error creating component:", error);
+    return res
+      .status(500)
+      .json({ message: "Error creating component", error: error.message });
   }
 };
 
