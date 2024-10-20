@@ -104,16 +104,19 @@ const handler = async (req, res) => {
       const result = await uploadToCloudinary(file); // Await the Cloudinary upload for each image
       const imageUrl = result.secure_url;
       uploadedImages.push(imageUrl);
-
-      // Save image URL and name to Prisma (Supabase table)
-      await prisma.component.create({
-        data: {
-          name,
-          imageUrl,
-          userId,
-        },
-      });
     }
+
+    // Create a comma-separated string of image URLs
+    const imageUrlsString = uploadedImages.join(',');
+
+    // Save name, userId, and comma-separated image URLs to Prisma (Supabase table)
+    await prisma.component.create({
+      data: {
+        name,
+        imageUrl: imageUrlsString, // Save the comma-separated string here
+        userId,
+      },
+    });
 
     // Respond with success
     return res.status(200).json({
