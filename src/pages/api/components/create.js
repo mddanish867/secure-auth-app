@@ -138,8 +138,8 @@ const handler = async (req, res) => {
         message: "Documentation is required",
       });
     }
-
-    if (!categories || categories.length === 0) {
+   
+    if (!categories) {
       return res.status(400).json({
         message: "Categories are required",
       });
