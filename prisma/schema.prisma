@@ -9,25 +9,25 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  googleId        String?   @unique
-  name           String?
-  email          String   @unique
-  password       String
-  profileImage    String?
-  isVerified     Boolean @default(false)
+  id                String   @id @default(uuid())
+  googleId          String?   @unique
+  name              String?
+  email             String   @unique
+  password          String
+  profileImage      String?
+  isVerified        Boolean @default(false)
   verificationToken String?
   verifyTokenExpiry DateTime?
-  resetToken     String?
-  resetTokenExpiry DateTime?
-  twoFactorSecret  String? // Field to store @FA secret
-  towFactorEnabled Boolean @default(false) // Field to indicate if 2FA is enabled
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  aiResponses      AIResponse[] // Relation to AIResponse model
-  webResponses     WebResponse[] // Relation to WebResponse model
-  template         Template[] // Relation to Templates model
-  component        Component[] // Relation to Component model
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  twoFactorSecret   String? // Field to store @FA secret
+  towFactorEnabled  Boolean @default(false) // Field to indicate if 2FA is enabled
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  aiResponses       AIResponse[] // Relation to AIResponse model
+  webResponses      WebResponse[] // Relation to WebResponse model
+  template          Template[] // Relation to Templates model
+  component         Component[] // Relation to Component model
 }
 
 model AIResponse {
@@ -51,8 +51,8 @@ model WebResponse {
 
 model Template {
   id          String   @id @default(uuid())
-  userId     String   // Foreign key to User
-  user       User     @relation(fields: [userId], references: [id])
+  userId      String   // Foreign key to User
+  user        User     @relation(fields: [userId], references: [id])
   name        String
   description String
   techStack   String[]
@@ -65,17 +65,17 @@ model Template {
 }
 
 model Component {
-  id          String   @id @default(uuid())
-  userId     String?   // Foreign key to User
-  user       User?     @relation(fields: [userId], references: [id])
-  name      String
-  description String
-  code        String
+  id                  String   @id @default(uuid())
+  userId              String?   // Foreign key to User
+  user                User?     @relation(fields: [userId], references: [id])
+  name                String
+  description         String
+  code                String
   implementationSteps String
-  apiRequired String
-  documentation String
-  imageUrl  String
-  //categories String?
-  createdAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  apiRequired         String
+  documentation       String
+  imageUrl            String
+  category            String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
