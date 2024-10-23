@@ -76,8 +76,15 @@ const uploadToCloudinary = (file) => {
 const handler = async (req, res) => {
   if (handleCors(req, res)) return;
 
-  if (req.method !== "PUT") {
-    return res.status(405).json({ message: "Method not allowed" });
+  // Handle preflight request immediately
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // Only allow PUT method for actual requests
+  if (req.method !== 'PUT') {
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
   try {
