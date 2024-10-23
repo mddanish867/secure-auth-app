@@ -22,8 +22,9 @@ export const config = {
 };
 
 const allowedOrigins = [
-  "http://localhost:3000/",
+  "http://localhost:3000",
   "https://anjumara-saas-application.vercel.app",
+  "https://secure-auth-app-gamma.vercel.app"
 ];
 
 // Helper function to handle CORS and preflight OPTIONS request
@@ -40,9 +41,8 @@ const handleCors = (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return true;
+  if (req.method !== "PUT" && req.method !== "OPTIONS") {
+    return res.status(405).json({ message: "Method not allowed" });
   }
   return false;
 };
