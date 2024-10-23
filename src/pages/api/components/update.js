@@ -110,7 +110,7 @@ const handler = async (req, res) => {
       return res.status(400).json({ message: "Component ID is required" });
     }
 
-    const component = await prisma.component.findUnique({ where: { id: parseInt(id) } });
+    const component = await prisma.component.findUnique({ where: { id } });
     if (!component) {
       return res.status(404).json({ message: "Component not found" });
     }
