@@ -159,7 +159,7 @@ const handler = async (req, res) => {
 
     // Update component in the database
     const updatedComponent = await prisma.component.update({
-      where: { id: parseInt(id) },
+      where: { id },
       data: {
         name: name || component.name,
         description: description || component.description,
