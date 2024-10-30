@@ -26,11 +26,9 @@ const allowedOrigins = [
   "https://anjumara-saas-application.vercel.app",
 ];
 
-// Helper function to handle CORS and preflight OPTIONS request
 const handleCors = (req, res) => {
   const origin = req.headers.origin;
 
-  // Set CORS headers
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   } else {
@@ -38,13 +36,12 @@ const handleCors = (req, res) => {
   }
 
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); // Fixed format
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
-  // Handle preflight OPTIONS request
   if (req.method === "OPTIONS") {
     res.status(200).end();
-    return true; // To exit the function
+    return true;
   }
   return false;
 };
