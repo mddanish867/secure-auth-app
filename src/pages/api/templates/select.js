@@ -42,7 +42,7 @@ const handler = async (req, res) => {
   }
 
   try {
-    // Fetch all components from Prisma (Supabase table)
+    // Fetch all templates from Prisma (Supabase table)
     const template = await prisma.template.findMany({
       select: {
         id: true,
@@ -68,10 +68,10 @@ const handler = async (req, res) => {
       return res.status(404).json({ message: "No templates found" });
     }
 
-    // Respond with the components
+    // Respond with the templates
     return res.status(200).json({
       message: "Templates fetched successfully",
-      components,
+      template,
     });
   } catch (error) {
     console.error("Error fetching templates:", error);
