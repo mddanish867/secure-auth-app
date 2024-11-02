@@ -190,7 +190,7 @@ const handler = async (req, res) => {
         templateUrl,
         sourceCodeUrl,
         apiList: apiListString, // Save as a comma-separated string
-        imageUrl: imageUrlsString, // Save the comma-separated image URLs
+        screenshots: imageUrlsString, // Save the comma-separated image URLs
         userId,
       },
     });
