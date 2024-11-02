@@ -206,3 +206,4 @@ const handler = async (req, res) => {
       .json({ message: "Error creating template", error: error.message });
   }
 };
+export default handler;
