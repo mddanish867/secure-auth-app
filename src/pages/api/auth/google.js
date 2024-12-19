@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const allowedOrigins = [
-  'http://localhost:3001',
   'http://localhost:3000',
   'https://anjumara-saas-application.vercel.app',
 ];
@@ -16,7 +15,7 @@ export default async function handler(req, res) {
   
   // CORS headers
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
