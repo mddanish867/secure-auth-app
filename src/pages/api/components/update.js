@@ -73,6 +73,89 @@ const uploadToCloudinary = (file) => {
   });
 };
 
+const validateRequest = async (req) => {
+  const { id } = req.query;
+  if (!id) {
+    throw new Error("Component ID is required");
+  }
+  return id;
+};
+
+const parseRequest = async (req) => {
+  const { id } = req.query;
+  const {
+    name,
+    description,
+    code,
+    implementationSteps,
+    apiRequired,
+    documentation,
+    category,
+    userId,
+  } = req.body;
+  const files = req.files;
+  return { id, name, description, code, implementationSteps, apiRequired, documentation, category, userId, files };
+};
+
+const uploadImages = async (files) => {
+  const uploadedImages = [];
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const result = await uploadToCloudinary(file);
+      const imageUrl = result.secure_url;
+      uploadedImages.push(imageUrl);
+    }
+  }
+  return uploadedImages;
+};
+
+const parseImplementationStepsAndApiRequired = (implementationSteps, apiRequired) => {
+  let implementationStepsArray = implementationSteps;
+  let apiRequiredArray = apiRequired;
+
+  if (typeof implementationSteps === "string") {
+    try {
+      implementationStepsArray = JSON.parse(implementationSteps);
+    } catch (error) {
+      console.error("Error parsing implementationSteps:", error);
+    }
+  }
+
+  if (typeof apiRequired === "string") {
+    try {
+      apiRequiredArray = JSON.parse(apiRequired);
+    } catch (error) {
+      console.error("Error parsing apiRequired:", error);
+    }
+  }
+
+  const implementationStepsString = Array.isArray(implementationStepsArray)
+    ? implementationStepsArray.join(",")
+    : "";
+  const apiRequiredString = Array.isArray(apiRequiredArray)
+    ? apiRequiredArray.join(",")
+    : "";
+  return { implementationStepsString, apiRequiredString };
+};
+
+const updateComponent = async (id, name, description, code, implementationStepsString, apiRequiredString, documentation, imageUrlsString, category, userId) => {
+  const updatedComponent = await prisma.component.update({
+    where: { id },
+    data: {
+      name: name,
+      description: description,
+      code: code,
+      implementationSteps: implementationStepsString,
+      apiRequired: apiRequiredString,
+      documentation: documentation,
+      imageUrl: imageUrlsString,
+      category: category,
+      userId: userId,
+    },
+  });
+  return updatedComponent;
+};
+
 const handler = async (req, res) => {
   if (handleCors(req, res)) return;
 
@@ -91,88 +174,18 @@ const handler = async (req, res) => {
     // Parse request with Multer
     await runMulter(req, res);
 
-    const { id } = req.query; // Get the component ID from the URL
-    const {
-      name,
-      description,
-      code,
-      implementationSteps,
-      apiRequired,
-      documentation,
-      category,
-      userId,
-    } = req.body;
-
-    const files = req.files;
-
-    // Validate ID and required fields
-    if (!id) {
-      return res.status(400).json({ message: "Component ID is required" });
-    }
-
+    const id = await validateRequest(req);
+    const { name, description, code, implementationSteps, apiRequired, documentation, category, userId, files } = await parseRequest(req);
+    const uploadedImages = await uploadImages(files);
+    const imageUrlsString = uploadedImages.length
+      ? uploadedImages.join(",")
+      : "";
+    const { implementationStepsString, apiRequiredString } = parseImplementationStepsAndApiRequired(implementationSteps, apiRequired);
     const component = await prisma.component.findUnique({ where: { id } });
     if (!component) {
       return res.status(404).json({ message: "Component not found" });
     }
-
-    // Upload new images if provided
-    const uploadedImages = [];
-    if (files && files.length > 0) {
-      for (const file of files) {
-        const result = await uploadToCloudinary(file);
-        const imageUrl = result.secure_url;
-        uploadedImages.push(imageUrl);
-      }
-    }
-
-    // Merge new and old images (if applicable)
-    const imageUrlsString = uploadedImages.length
-      ? uploadedImages.join(",")
-      : component.imageUrl;
-
-    // Parse strings to arrays if necessary
-    let implementationStepsArray = implementationSteps;
-    let apiRequiredArray = apiRequired;
-
-    if (typeof implementationSteps === "string") {
-      try {
-        implementationStepsArray = JSON.parse(implementationSteps);
-      } catch (error) {
-        console.error("Error parsing implementationSteps:", error);
-      }
-    }
-
-    if (typeof apiRequired === "string") {
-      try {
-        apiRequiredArray = JSON.parse(apiRequired);
-      } catch (error) {
-        console.error("Error parsing apiRequired:", error);
-      }
-    }
-
-    const implementationStepsString = Array.isArray(implementationStepsArray)
-      ? implementationStepsArray.join(",")
-      : component.implementationSteps;
-    const apiRequiredString = Array.isArray(apiRequiredArray)
-      ? apiRequiredArray.join(",")
-      : component.apiRequired;
-
-    // Update component in the database
-    const updatedComponent = await prisma.component.update({
-      where: { id },
-      data: {
-        name: name || component.name,
-        description: description || component.description,
-        code: code || component.code,
-        implementationSteps: implementationStepsString,
-        apiRequired: apiRequiredString,
-        documentation: documentation || component.documentation,
-        imageUrl: imageUrlsString,
-        category: category || component.category,
-        userId: userId || component.userId,
-      },
-    });
-
+    const updatedComponent = await updateComponent(id, name || component.name, description || component.description, code || component.code, implementationStepsString, apiRequiredString, documentation || component.documentation, imageUrlsString, category || component.category, userId || component.userId);
     return res.status(200).json({
       message: "Component updated successfully",
       component: updatedComponent,

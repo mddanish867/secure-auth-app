@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     res.status(200).json({ qrCodeUrl, secret: secret.base32 });
     
   } catch (error) {
-    console.log(error);
+    console.error("Error enabling 2FA:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

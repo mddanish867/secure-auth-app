@@ -109,7 +109,12 @@ export default async function handler(req, res) {
               Thank you for registering with AnjumAra! To complete your registration, please verify your email address by clicking the button below.
           </p>
           <div class="text-center">
-              <a href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}" class="bg-blue-500 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-blue-600">Verify Email</a>
+              <a 
+                href="${process.env.DOMAIN}/verifyemail?token=${verificationToken}" 
+                class="bg-blue-500 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-blue-600"
+              >
+                Verify Email
+              </a>
           </div>
           <p class="text-gray-600 text-center mt-6">
               Or you can copy and paste the following URL into your browser:
