@@ -94,7 +94,18 @@ export default async function handler(req, res) {
   });
 
   } catch (error) {
-    console.log(error);
+    // Implement a proper logger with levels, for example using the 'winston' library
+    const logger = {
+      error: (message) => {
+        // Log the error message
+        // For production, consider using a logging service like Sentry or Loggly
+        // For development, you can simply log to the console
+        if (process.env.NODE_ENV!== 'production') {
+          console.error(message);
+        }
+      },
+    };
+    logger.error(error);
     res.status(500).json({
       message: "Internal server error",
     });

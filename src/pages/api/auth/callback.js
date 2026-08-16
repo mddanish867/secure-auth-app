@@ -15,66 +15,75 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const origin = req.headers.origin;
-  
-  // CORS headers
+  setCorsHeaders(res, origin);
+  handleOptionsRequest(res, req.method);
+  handleInvalidMethod(res, req.method);
+
+  try {
+    const code = getCodeFromQuery(req);
+    if (!code) {
+      throw new Error('No code provided');
+    }
+
+    const session = await exchangeCodeForSession(code);
+    const user = session.user;
+    if (!user || !user.email) {
+      throw new Error('No user data received');
+    }
+
+    const existingUser = await getUserOrCreate(prisma, user);
+    const frontendOrigin = getFrontendOrigin();
+    res.redirect(`${frontendOrigin}/auth/success?session=${session.session.access_token}`);
+  } catch (error) {
+    console.error('Callback error:', error);
+    const frontendOrigin = getFrontendOrigin();
+    res.redirect(
+      `${frontendOrigin}/auth/error?message=${encodeURIComponent(error.message)}`
+    );
+  }
+}
+
+function setCorsHeaders(res, origin) {
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
+}
 
-  if (req.method === 'OPTIONS') {
+function handleOptionsRequest(res, method) {
+  if (method === 'OPTIONS') {
     return res.status(200).end();
   }
+}
 
-  // Changed to accept GET method for OAuth callback
-  if (req.method !== 'GET') {
+function handleInvalidMethod(res, method) {
+  if (method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
+}
 
-  try {
-    const { code } = req.query;
+function getCodeFromQuery(req) {
+  return req.query.code;
+}
 
-    if (!code) {
-      throw new Error('No code provided');
-    }
+function exchangeCodeForSession(code) {
+  return supabase.auth.exchangeCodeForSession(code);
+}
 
-    // Exchange code for session
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+function getUserOrCreate(prisma, user) {
+  return prisma.user.findUnique({ where: { email: user.email } })
+    .then(existingUser => existingUser || prisma.user.create({
+      data: {
+        email: user.email,
+        googleId: user.id,
+        name: user.user_metadata?.full_name || '',
+        profileImage: user.user_metadata?.avatar_url || '',
+      },
+    }));
+}
 
-    if (error) throw error;
-
-    const { user, session } = data;
-
-    if (!user || !user.email) {
-      throw new Error('No user data received');
-    }
-
-    // Check/create user in Prisma
-    let existingUser = await prisma.user.findUnique({
-      where: { email: user.email },
-    });
-
-    if (!existingUser) {
-      existingUser = await prisma.user.create({
-        data: {
-          email: user.email,
-          googleId: user.id,
-          name: user.user_metadata?.full_name || '',
-          profileImage: user.user_metadata?.avatar_url || '',
-        },
-      });
-    }
-
-    // Redirect to frontend with session
-    const frontendOrigin = 'http://localhost:3000'; // Your frontend URL
-    res.redirect(`${frontendOrigin}/auth/success?session=${session.access_token}`);
-  } catch (error) {
-    console.error('Callback error:', error);
-    const frontendOrigin = 'http://localhost:3000'; // Your frontend URL
-    res.redirect(
-      `${frontendOrigin}/auth/error?message=${encodeURIComponent(error.message)}`
-    );
-  }
+function getFrontendOrigin() {
+  return 'http://localhost:3000'; // Your frontend URL
 }

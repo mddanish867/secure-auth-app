@@ -72,6 +72,125 @@ const uploadToCloudinary = (file) => {
   });
 };
 
+const validateRequest = (req) => {
+  const {
+    name,
+    category,
+    description,
+    techStack,
+    templateUrl,
+    sourceCodeUrl,
+    apiList,
+    userId,
+  } = req.body;
+
+  const files = req.files;
+
+  if (!name) {
+    throw new Error("Name is required");
+  }
+
+  if (!description) {
+    throw new Error("Description is required");
+  }
+  if (!category) {
+    throw new Error("Category is required");
+  }
+  if (!techStack) {
+    throw new Error("Tech Stack is required");
+  }
+
+  if (!templateUrl) {
+    throw new Error("Templare Url is required");
+  }
+
+  if (!apiList || apiList.length === 0) {
+    throw new Error("API list are required");
+  }
+
+  if (!sourceCodeUrl) {
+    throw new Error("source code Url is required");
+  }
+
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+
+  if (!files || files.length === 0) {
+    throw new Error("At least one image is required");
+  }
+};
+
+const uploadImagesToCloudinary = async (files) => {
+  const uploadedImages = [];
+
+  for (const file of files) {
+    // Upload each file to Cloudinary
+    const result = await uploadToCloudinary(file); // Await the Cloudinary upload for each image
+    const imageUrl = result.secure_url;
+    uploadedImages.push(imageUrl);
+  }
+
+  return uploadedImages;
+};
+
+const parseApiList = (apiList) => {
+  let apiListArray = apiList;
+
+  if (typeof apiList === "string") {
+    try {
+      apiListArray = JSON.parse(apiList); // Convert to array if string
+    } catch (error) {
+      console.error("Error parsing apiList:", error);
+    }
+  }
+
+  // Convert arrays to comma-separated strings
+  const apiListString = Array.isArray(apiListArray)
+    ? apiListArray.join(",")
+    : "";
+
+  return apiListString;
+};
+
+const createTemplate = async (req) => {
+  const {
+    name,
+    category,
+    description,
+    techStack,
+    templateUrl,
+    sourceCodeUrl,
+    apiList,
+    userId,
+  } = req.body;
+
+  const files = req.files;
+
+  validateRequest(req);
+
+  const uploadedImages = await uploadImagesToCloudinary(files);
+  const imageUrlsString = uploadedImages.join(",");
+  const apiListString = parseApiList(apiList);
+
+  // Save all fields to Prisma (Supabase table)
+  await prisma.template.create({
+    data: {
+      name,
+      category, // Directly save the categories array
+      description,
+      techStack,
+      templateUrl,
+      sourceCodeUrl,
+      apiList: apiListString, // Save as a comma-separated string
+      screenshots: imageUrlsString, // Save the comma-separated image URLs
+      userId,
+    },
+  });
+
+  return uploadedImages;
+};
+
 const handler = async (req, res) => {
   // Handle CORS and exit if OPTIONS request
   if (handleCors(req, res)) return;
@@ -86,114 +205,8 @@ const handler = async (req, res) => {
     // Parse request with Multer
     await runMulter(req, res);
 
-    const {
-      name,
-      category,
-      description,
-      techStack,
-      templateUrl,
-      sourceCodeUrl,
-      apiList,
-      userId,
-    } = req.body;
+    const uploadedImages = await createTemplate(req);
 
-    const files = req.files;
-
-    // Validate required fields
-    if (!name) {
-      return res.status(400).json({
-        message: "Name is required",
-      });
-    }
-
-    if (!description) {
-      return res.status(400).json({
-        message: "Description is required",
-      });
-    }
-    if (!category) {
-      return res.status(400).json({
-        message: "Category is required",
-      });
-    }
-    if (!techStack) {
-      return res.status(400).json({
-        message: "Tech Stack is required",
-      });
-    }
-
-    if (!templateUrl) {
-      return res.status(400).json({
-        message: "Templare Url is required",
-      });
-    }
-
-    if (!apiList || apiList.length === 0) {
-      return res.status(400).json({
-        message: "API list are required",
-      });
-    }
-
-    if (!sourceCodeUrl) {
-      return res.status(400).json({
-        message: "source code Url is required",
-      });
-    }
-
-    if (!userId) {
-      return res.status(400).json({
-        message: "User ID is required",
-      });
-    }
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({
-        message: "At least one image is required",
-      });
-    }
-
-    const uploadedImages = [];
-
-    for (const file of files) {
-      // Upload each file to Cloudinary
-      const result = await uploadToCloudinary(file); // Await the Cloudinary upload for each image
-      const imageUrl = result.secure_url;
-      uploadedImages.push(imageUrl);
-    }
-
-    // Create a comma-separated string of image URLs
-    const imageUrlsString = uploadedImages.join(",");
-    // **Check if apiRequired are strings and parse them if necessary**
-
-    let apiListArray = apiList;
-
-    if (typeof apiList === "string") {
-      try {
-        apiListArray = JSON.parse(apiList); // Convert to array if string
-      } catch (error) {
-        console.error("Error parsing apiList:", error);
-      }
-    }
-
-    // Convert arrays to comma-separated strings
-    const apiListString = Array.isArray(apiListArray)
-      ? apiListArray.join(",")
-      : "";
-
-    // Save all fields to Prisma (Supabase table)
-    await prisma.template.create({
-      data: {
-        name,
-        category, // Directly save the categories array
-        description,
-        techStack,
-        templateUrl,
-        sourceCodeUrl,
-        apiList: apiListString, // Save as a comma-separated string
-        screenshots: imageUrlsString, // Save the comma-separated image URLs
-        userId,
-      },
-    });
     // Respond with success
     return res.status(200).json({
       message: "Template created successfully",

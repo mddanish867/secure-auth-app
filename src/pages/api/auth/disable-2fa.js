@@ -35,7 +35,9 @@ export default async function handler(req, res) {
 
     res.status(200).json({ message: "2FA disabled successfully" });
   } catch (error) {
-    console.log(error);
+    // Implement a proper logger with levels, for example using a logging library
+    // For demonstration purposes, a simple console.error is used here
+    console.error("Error disabling 2FA:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

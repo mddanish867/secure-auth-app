@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const users = await prisma.user.findMany();
-  console.log(users);
+  // Removed console.log for production, consider implementing a logger with levels for debugging
 }
 
 main()
