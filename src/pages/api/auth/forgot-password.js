@@ -97,7 +97,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.log(error);
+    console.error(error); // Log the error with an error level
     res.status(500).json({ message: "Internal server error" });
   }
 }
