@@ -75,6 +75,144 @@ const uploadToCloudinary = (file) => {
   });
 };
 
+const validateRequest = (req) => {
+  const {
+    name,
+    description,
+    code,
+    implementationSteps,
+    apiRequired,
+    documentation,
+    category,
+    userId,
+  } = req.body;
+
+  if (!name) {
+    throw new Error("Name is required");
+  }
+
+  if (!description) {
+    throw new Error("Description is required");
+  }
+  if (!category) {
+    throw new Error("Category is required");
+  }
+  if (!code) {
+    throw new Error("Code is required");
+  }
+
+  if (!implementationSteps || implementationSteps.length === 0) {
+    throw new Error("Implementation steps are required");
+  }
+
+  if (!apiRequired || apiRequired.length === 0) {
+    throw new Error("API required information is required");
+  }
+
+  if (!documentation) {
+    throw new Error("Documentation is required");
+  }
+
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+};
+
+const parseImplementationStepsAndApiRequired = (implementationSteps, apiRequired) => {
+  let implementationStepsArray = implementationSteps;
+  let apiRequiredArray = apiRequired;
+
+  if (typeof implementationSteps === "string") {
+    try {
+      implementationStepsArray = JSON.parse(implementationSteps); // Convert to array if string
+    } catch (error) {
+      console.error("Error parsing implementationSteps:", error);
+    }
+  }
+
+  if (typeof apiRequired === "string") {
+    try {
+      apiRequiredArray = JSON.parse(apiRequired); // Convert to array if string
+    } catch (error) {
+      console.error("Error parsing apiRequired:", error);
+    }
+  }
+
+  return {
+    implementationStepsArray,
+    apiRequiredArray,
+  };
+};
+
+const uploadImagesToCloudinary = async (files) => {
+  const uploadedImages = [];
+
+  for (const file of files) {
+    // Upload each file to Cloudinary
+    const result = await uploadToCloudinary(file); // Await the Cloudinary upload for each image
+    const imageUrl = result.secure_url;
+    uploadedImages.push(imageUrl);
+  }
+
+  return uploadedImages;
+};
+
+const createComponent = async (req) => {
+  const {
+    name,
+    description,
+    code,
+    implementationSteps,
+    apiRequired,
+    documentation,
+    category,
+    userId,
+  } = req.body;
+
+  const files = req.files;
+
+  if (!files || files.length === 0) {
+    throw new Error("At least one image is required");
+  }
+
+  validateRequest(req);
+
+  const { implementationStepsArray, apiRequiredArray } = parseImplementationStepsAndApiRequired(
+    implementationSteps,
+    apiRequired
+  );
+
+  const uploadedImages = await uploadImagesToCloudinary(files);
+
+  // Create a comma-separated string of image URLs
+  const imageUrlsString = uploadedImages.join(",");
+
+  // Convert arrays to comma-separated strings
+  const implementationStepsString = Array.isArray(implementationStepsArray)
+    ? implementationStepsArray.join(",")
+    : "";
+  const apiRequiredString = Array.isArray(apiRequiredArray)
+    ? apiRequiredArray.join(",")
+    : "";
+
+  // Save all fields to Prisma (Supabase table)
+  await prisma.component.create({
+    data: {
+      name,
+      description,
+      code,
+      implementationSteps: implementationStepsString, // Save as a comma-separated string
+      apiRequired: apiRequiredString, // Save as a comma-separated string
+      documentation,
+      imageUrl: imageUrlsString, // Save the comma-separated image URLs
+      category, // Directly save the categories array
+      userId,
+    },
+  });
+
+  return uploadedImages;
+};
+
 const handler = async (req, res) => {
   // Handle CORS and exit if OPTIONS request
   if (handleCors(req, res)) return;
@@ -89,126 +227,7 @@ const handler = async (req, res) => {
     // Parse request with Multer
     await runMulter(req, res);
 
-    const {
-      name,
-      description,
-      code,
-      implementationSteps,
-      apiRequired,
-      documentation,
-      category,
-      userId,
-    } = req.body;
-
-    const files = req.files;
-
-    // Validate required fields
-    if (!name) {
-      return res.status(400).json({
-        message: "Name is required",
-      });
-    }
-
-    if (!description) {
-      return res.status(400).json({
-        message: "Description is required",
-      });
-    }
-    if (!category) {
-      return res.status(400).json({
-        message: "Category is required",
-      });
-    }
-    if (!code) {
-      return res.status(400).json({
-        message: "Code is required",
-      });
-    }
-
-    if (!implementationSteps || implementationSteps.length === 0) {
-      return res.status(400).json({
-        message: "Implementation steps are required",
-      });
-    }
-
-    if (!apiRequired || apiRequired.length === 0) {
-      return res.status(400).json({
-        message: "API required information is required",
-      });
-    }
-
-    if (!documentation) {
-      return res.status(400).json({
-        message: "Documentation is required",
-      });
-    }
-
-    if (!userId) {
-      return res.status(400).json({
-        message: "User ID is required",
-      });
-    }
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({
-        message: "At least one image is required",
-      });
-    }
-
-    const uploadedImages = [];
-
-    for (const file of files) {
-      // Upload each file to Cloudinary
-      const result = await uploadToCloudinary(file); // Await the Cloudinary upload for each image
-      const imageUrl = result.secure_url;
-      uploadedImages.push(imageUrl);
-    }
-
-    // Create a comma-separated string of image URLs
-    const imageUrlsString = uploadedImages.join(",");
-
-    // **Check if implementationSteps and apiRequired are strings and parse them if necessary**
-    let implementationStepsArray = implementationSteps;
-    let apiRequiredArray = apiRequired;
-
-    if (typeof implementationSteps === "string") {
-      try {
-        implementationStepsArray = JSON.parse(implementationSteps); // Convert to array if string
-      } catch (error) {
-        console.error("Error parsing implementationSteps:", error);
-      }
-    }
-
-    if (typeof apiRequired === "string") {
-      try {
-        apiRequiredArray = JSON.parse(apiRequired); // Convert to array if string
-      } catch (error) {
-        console.error("Error parsing apiRequired:", error);
-      }
-    }
-
-    // Convert arrays to comma-separated strings
-    const implementationStepsString = Array.isArray(implementationStepsArray)
-      ? implementationStepsArray.join(",")
-      : "";
-    const apiRequiredString = Array.isArray(apiRequiredArray)
-      ? apiRequiredArray.join(",")
-      : "";
-
-    // Save all fields to Prisma (Supabase table)
-    await prisma.component.create({
-      data: {
-        name,
-        description,
-        code,
-        implementationSteps: implementationStepsString, // Save as a comma-separated string
-        apiRequired: apiRequiredString, // Save as a comma-separated string
-        documentation,
-        imageUrl: imageUrlsString, // Save the comma-separated image URLs
-        category, // Directly save the categories array
-        userId,
-      },
-    });
+    const uploadedImages = await createComponent(req);
 
     // Respond with success
     return res.status(200).json({

@@ -22,7 +22,7 @@ export const config = {
 };
 
 const allowedOrigins = [
-  "http://localhost:3000",
+  process.env.NEXT_PUBLIC_CLIENT_URL,
   "https://anjumara-saas-application.vercel.app",
   "https://secure-auth-app-gamma.vercel.app"
 ];
@@ -125,7 +125,7 @@ const parseImplementationStepsAndApiRequired = (implementationSteps, apiRequired
     try {
       apiRequiredArray = JSON.parse(apiRequired);
     } catch (error) {
-      console.error("Error parsing apiRequired:", error);
+      logger.error("Error parsing apiRequired:", error);
     }
   }
 
